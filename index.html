@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROACT | Spot the risk. Report it. Reduce it.</title>
+<style>
+:root{
+  --navy:#0f2744;
+  --navy2:#17324d;
+  --teal:#20c7c9;
+  --bg:#f5f7fa;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#6c7a90;
+  --line:#dbe4ec;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+a{text-decoration:none;color:inherit}
+header{
+  background:var(--navy);
+  color:#fff;
+  position:sticky;
+  top:0;
+  z-index:20;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.nav{
+  max-width:1180px;
+  margin:auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 22px;
+  gap:18px;
+}
+.navbrand{display:flex;align-items:center;gap:12px;font-weight:800}
+.navbrand img{height:42px;width:auto;border-radius:8px;background:white;padding:3px}
+.navlinks{display:flex;gap:24px;font-size:14px;font-weight:700}
+.navlinks a{opacity:.92}
+.navlinks a:hover{color:var(--teal)}
+.hero{
+  background:linear-gradient(180deg,var(--navy),#112b4b);
+  color:white;
+  padding:48px 20px 54px;
+  text-align:center;
+}
+.hero img{max-width:620px;width:86%;background:#fff;border-radius:18px;padding:12px}
+.hero h1{font-size:46px;margin:18px 0 8px;letter-spacing:1px}
+.hero p{font-size:22px;margin:0;color:#dfe7ef}
+.container{max-width:1180px;margin:auto;padding:48px 20px}
+.section-title h2{font-size:30px;margin:0 0 8px}
+.section-title p{margin:0 0 26px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 3px 12px rgba(15,39,68,.05);
+}
+.card:hover{transform:translateY(-2px);transition:.2s;box-shadow:0 7px 18px rgba(15,39,68,.08)}
+.icon{
+  width:48px;height:48px;border-radius:12px;
+  display:grid;place-items:center;font-size:24px;
+  background:#eaf8f8;margin-bottom:16px
+}
+.card h3{margin:0 0 8px;font-size:18px}
+.card p{margin:0;color:var(--muted);line-height:1.45;min-height:42px}
+.card button{
+  margin-top:18px;border:0;background:none;color:#2458e6;font-weight:700;cursor:pointer;padding:0;font-size:14px
+}
+.module{
+  margin-top:46px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px
+}
+.metric{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}
+.metric strong{font-size:28px;color:var(--navy)}
+.metric span{display:block;color:var(--muted);font-size:13px;margin-top:5px}
+.alert{
+  margin-top:24px;background:#fff7dd;border:1px solid #efd596;border-radius:14px;padding:18px
+}
+.alert strong{color:#9b5a00}
+.demo{
+  max-width:1180px;margin:0 auto 28px;padding:0 20px
+}
+.demo div{background:#eef9f9;border:1px solid #bce8e8;border-radius:12px;padding:13px 16px;font-size:13px;color:#31535a}
+footer{background:var(--navy);color:#cbd6e3;text-align:center;padding:28px 20px;margin-top:40px;font-size:13px}
+.modal{
+  position:fixed;inset:0;background:rgba(8,20,34,.65);display:none;align-items:center;justify-content:center;padding:20px;z-index:50
+}
+.modal.open{display:flex}
+.modalbox{background:white;max-width:640px;width:100%;max-height:88vh;overflow:auto;border-radius:18px;padding:24px}
+.modalbox h2{margin-top:0}
+label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #cad5df;border-radius:10px;font:inherit}
+textarea{min-height:90px}
+.actions{display:flex;gap:10px;margin-top:18px}
+.actions button{flex:1;padding:12px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+.primary{background:var(--navy);color:white}.secondary{background:#eef2f6;color:var(--navy)}
+@media(max-width:850px){
+  .grid{grid-template-columns:1fr 1fr}
+  .module{grid-template-columns:1fr 1fr}
+  .navlinks{display:none}
+}
+@media(max-width:560px){
+  .grid,.module{grid-template-columns:1fr}
+  .hero h1{font-size:34px}
+  .hero p{font-size:18px}
+  .navbrand img{height:34px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="navbrand">
+      <img src="assets/proact-logo.png" alt="PROACT logo">
+      <span>PROACT</span>
+    </div>
+    <nav class="navlinks">
+      <a href="#report">Report</a>
+      <a href="#allreports">All Reports</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#risklibrary">Risk Library</a>
+      <a href="#actions">Actions</a>
+      <a href="#notifications">Notifications</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <img src="assets/proact-logo.png" alt="PROACT - Spot the risk. Report it. Reduce it.">
+  <h1>PROACT</h1>
+  <p>Spot the risk. Report it. Reduce it.</p>
+</section>
+
+<div class="demo">
+  <div><strong>Demo mode:</strong> Please use test information only. Do not enter real employee, guest, medical, CCTV or sensitive personal information.</div>
+</div>
+
+<main class="container" id="report">
+  <div class="section-title">
+    <h2>What would you like to report?</h2>
+    <p>Select a report type below. Every submission is issued a unique PROACT reference number.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="icon">❤️‍🩹</div>
+      <h3>Accident / Injury</h3>
+      <p>Report an injury or accident involving a person.</p>
+      <button onclick="openReport('Accident / Injury')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">🛡️</div>
+      <h3>Near Miss</h3>
+      <p>Something almost went wrong but no one was hurt.</p>
+      <button onclick="openReport('Near Miss')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">⚠️</div>
+      <h3>Hazard / Unsafe Condition</h3>
+      <p>Flag an unsafe condition before it causes harm.</p>
+      <button onclick="openReport('Hazard / Unsafe Condition')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">🍽️</div>
+      <h3>Food Safety / Hygiene</h3>
+      <p>Report a food safety, hygiene or contamination concern.</p>
+      <button onclick="openReport('Food Safety / Hygiene')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">🌿</div>
+      <h3>Allergy Incident</h3>
+      <p>Report an allergic reaction or allergen-related incident.</p>
+      <button onclick="openReport('Allergy Incident')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">🚨</div>
+      <h3>Security / Behavioural Incident</h3>
+      <p>Report a security, behavioural or criminal incident.</p>
+      <button onclick="openReport('Security / Behavioural Incident')">Start report →</button>
+    </div>
+    <div class="card">
+      <div class="icon">🧰</div>
+      <h3>Property / Equipment Damage</h3>
+      <p>Report damaged property, equipment or workplace assets.</p>
+      <button onclick="openReport('Property / Equipment Damage')">Start report →</button>
+    </div>
+  </div>
+
+  <section id="dashboard" class="module">
+    <div class="metric"><strong>12</strong><span>Accidents this month</span></div>
+    <div class="metric"><strong>31</strong><span>Near misses</span></div>
+    <div class="metric"><strong>42</strong><span>Hazards reported</span></div>
+    <div class="metric"><strong>3</strong><span>Repeat risks identified</span></div>
+  </section>
+
+  <div class="alert" id="notifications">
+    <strong>⚠ PROACT Pattern Alert</strong><br><br>
+    3 reports relating to Slips, Trips & Falls have been recorded in the Main Kitchen within 30 days.
+    Review the associated risk assessment and existing controls.
+  </div>
+
+  <section id="risklibrary" style="margin-top:46px">
+    <div class="section-title">
+      <h2>Risk Library</h2>
+      <p>Reports can be linked to relevant risk assessments to help identify recurring risks and control failures.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Slips, Trips & Falls</h3><p>27 linked reports · Medium risk</p></div>
+      <div class="card"><h3>Allergen Management</h3><p>5 linked reports · High priority</p></div>
+      <div class="card"><h3>Vehicle & Pedestrian Movement</h3><p>8 linked reports · High risk</p></div>
+    </div>
+  </section>
+
+  <section id="actions" style="margin-top:46px">
+    <div class="section-title">
+      <h2>Corrective Actions</h2>
+      <p>Track responsibility, due dates, status and completion evidence.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>PRO-2026-00124</h3><p>Review pedestrian segregation on service road.<br><br><strong>Status:</strong> In Progress</p></div>
+      <div class="card"><h3>PRO-2026-00119</h3><p>Review allergen controls and staff training.<br><br><strong>Status:</strong> Open</p></div>
+    </div>
+  </section>
+
+  <section id="allreports" style="margin-top:46px">
+    <div class="section-title">
+      <h2>All Reports</h2>
+      <p>This demo section shows how submitted records could be listed and filtered in a live system.</p>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal">
+  <div class="modalbox">
+    <h2 id="modalTitle">New report</h2>
+    <form onsubmit="submitDemo(event)">
+      <label>PROACT Reference</label>
+      <input id="reference" readonly>
+      <label>Date and time</label>
+      <input type="datetime-local" required>
+      <label>Location</label>
+      <select required>
+        <option value="">Select...</option>
+        <option>Reception</option><option>Main Kitchen</option><option>Restaurant / Bar</option>
+        <option>Conference & Events</option><option>Service Road</option><option>Car Park</option>
+        <option>Guest Bedroom</option><option>Pool / Leisure</option><option>Back of House</option><option>Other</option>
+      </select>
+      <label>Department</label>
+      <select required>
+        <option value="">Select...</option>
+        <option>Security</option><option>Front Office</option><option>Food & Beverage</option>
+        <option>Housekeeping</option><option>Maintenance</option><option>Conference & Events</option><option>Leisure</option><option>Other</option>
+      </select>
+      <label>Risk category</label>
+      <select required>
+        <option value="">Select...</option>
+        <option>Slips, Trips & Falls</option><option>Manual Handling</option><option>Fire Safety</option>
+        <option>Vehicles</option><option>Violence & Aggression</option><option>Food Safety</option>
+        <option>Allergen Management</option><option>Equipment</option><option>Other</option>
+      </select>
+      <label>Description</label>
+      <textarea required placeholder="Give a clear factual description..."></textarea>
+      <label>Immediate action taken</label>
+      <textarea></textarea>
+      <label>Severity</label>
+      <select><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+      <div class="actions">
+        <button type="button" class="secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="primary">Submit demo report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <strong>PROACT</strong> · Proactive Reporting, Observation, Assessment, Control & Tracking<br><br>
+  Spot the risk. Report it. Reduce it.
+</footer>
+
+<script>
+function makeRef(){
+  const y=new Date().getFullYear();
+  return `PRO-${y}-${Math.floor(100000+Math.random()*900000)}`;
+}
+function openReport(type){
+  document.getElementById('modalTitle').textContent=type;
+  document.getElementById('reference').value=makeRef();
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function submitDemo(e){
+  e.preventDefault();
+  alert('Demo report submitted. No real data has been stored.');
+  closeModal();
+}
+</script>
+</body>
+</html>
