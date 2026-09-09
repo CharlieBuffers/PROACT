@@ -95,10 +95,11 @@ textarea{min-height:90px}
   <div class="nav">
     <div class="brand">
       <span>PROACT<span class="three">1102</span></span>
+      <span id="roleBadge" style="font-size:11px;background:#eaf8f8;color:#17324d;padding:5px 8px;border-radius:999px;margin-left:8px;">Employee</span>
     </div>
     <div class="links">
       <a href="#report">Report</a>
-      <a href="#reports">My Reports</a>
+      <a href="#reports">Reports</a>
       <a href="#dashboard">Dashboard</a>
       <a href="#risks">Risk Library</a>
       <a href="#actions">Actions</a>
@@ -134,11 +135,13 @@ textarea{min-height:90px}
     <div class="card"><div class="icon">🧰</div><h3>Property / Equipment Damage</h3><p>Report damaged equipment, property or workplace assets.</p><button onclick="openReport('Property / Equipment Damage')">Start report →</button></div>
   </div>
 
+  
   <section class="panel" id="reports">
-    <h2>My Reports</h2>
-    <p class="lead">Reports saved by the signed-in demo user.</p>
+    <h2 id="reportsHeading">My Reports</h2>
+    <p class="lead" id="reportsLead">Reports saved by the signed-in user.</p>
     <div id="reportList"></div>
   </section>
+
 
   <section class="panel" id="dashboard">
     <h2>Safety Dashboard</h2>
@@ -150,15 +153,25 @@ textarea{min-height:90px}
     </div>
   </section>
 
+  <section class="panel" id="patterns">
+    <h2>PROACT1102 Pattern Alerts</h2>
+    <p class="lead">Recurring risks are flagged when the same location and risk category appear 3+ times within 30 days or 5+ times within 90 days.</p>
+    <div id="patternAlerts"><div class="card"><p>No recurring patterns detected yet.</p></div></div>
+  </section>
+
+
   <section class="panel" id="risks">
     <h2>Risk Library</h2>
     <p class="lead">This can later link reports to formal workplace risk assessments.</p>
   </section>
 
+  
   <section class="panel" id="actions">
     <h2>Corrective Actions</h2>
-    <p class="lead">This can later track action owners, priorities, due dates, completion evidence and overdue actions.</p>
+    <p class="lead">Track action owners, priorities, due dates and completion status.</p>
+    <div id="actionList"></div>
   </section>
+
 </main>
 
 <footer>
@@ -223,6 +236,29 @@ textarea{min-height:90px}
   </div>
 </div>
 
+
+<div class="modal" id="actionModal" style="display:none;">
+  <div class="modalbox">
+    <h2>Create Corrective Action</h2>
+    <form id="actionForm" onsubmit="saveAction(event)">
+      <input type="hidden" id="actionReportId">
+      <label>Action required</label>
+      <textarea id="actionDescription" required></textarea>
+      <label>Assigned to</label>
+      <input id="actionOwner" placeholder="Name or team">
+      <label>Priority</label>
+      <select id="actionPriority"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+      <label>Due date</label>
+      <input id="actionDue" type="date">
+      <div class="actions">
+        <button type="button" class="secondary" onclick="closeActionModal()">Cancel</button>
+        <button type="submit" class="primary">Save action</button>
+      </div>
+      <div id="actionMessage" style="font-size:13px;color:#6d7b91;margin-top:10px;"></div>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /*
@@ -266,10 +302,40 @@ async function signOut() {
   document.getElementById("authView").style.display = "block";
 }
 
+let currentRole = "employee";
+
 async function loadApp() {
   document.getElementById("authView").style.display = "none";
   document.getElementById("appView").style.display = "block";
+  await loadRole();
   await loadReports();
+  await loadActions();
+}
+
+
+async function loadRole() {
+  const { data: userData } = await supabaseClient.auth.getUser();
+  if (!userData?.user) return;
+
+  const { data } = await supabaseClient
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+
+  currentRole = data?.role || "employee";
+  const label = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+  document.getElementById("roleBadge").textContent = label;
+
+  const manager = ["manager","admin"].includes(currentRole);
+  document.getElementById("reportsHeading").textContent = manager ? "All Reports" : "My Reports";
+  document.getElementById("reportsLead").textContent = manager
+    ? "All reports visible to manager/admin users."
+    : "Reports saved by the signed-in user.";
+}
+
+function isManager() {
+  return ["manager","admin"].includes(currentRole);
 }
 
 function makeRef() {
@@ -327,13 +393,14 @@ async function saveReport(e) {
 
 async function loadReports() {
   if (!supabaseClient) return;
+
   const { data, error } = await supabaseClient
     .from("reports")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
-    document.getElementById("reportList").innerHTML = `<div class="alert">${error.message}</div>`;
+    document.getElementById("reportList").innerHTML = `<div class="alert">${escapeHtml(error.message)}</div>`;
     return;
   }
 
@@ -349,9 +416,105 @@ async function loadReports() {
         <h3>${escapeHtml(r.reference)} · ${escapeHtml(r.report_type)}</h3>
         <p><strong>${escapeHtml(r.location)}</strong> · ${escapeHtml(r.department)}</p>
         <p>${escapeHtml(r.risk_category)} · ${escapeHtml(r.severity)} · ${escapeHtml(r.status)}</p>
+        ${isManager() ? `<button onclick="openActionModal(${r.id})">Create corrective action →</button>` : ""}
       </div>
     `).join("")
     : `<div class="card"><p>No demo reports saved yet.</p></div>`;
+
+  renderPatterns(rows);
+}
+
+function renderPatterns(rows) {
+  const now = Date.now();
+  const groups = {};
+
+  rows.forEach(r => {
+    const key = `${r.location}|||${r.risk_category}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  const alerts = [];
+
+  Object.entries(groups).forEach(([key, group]) => {
+    const [location, risk] = key.split("|||");
+    const count30 = group.filter(r => (now - new Date(r.created_at).getTime()) <= 30*86400000).length;
+    const count90 = group.filter(r => (now - new Date(r.created_at).getTime()) <= 90*86400000).length;
+
+    if (count30 >= 3 || count90 >= 5) {
+      alerts.push({ location, risk, count30, count90 });
+    }
+  });
+
+  const box = document.getElementById("patternAlerts");
+  box.innerHTML = alerts.length
+    ? alerts.map(a => `
+      <div class="alert">
+        <strong>⚠ PROACT1102 Pattern Alert</strong><br><br>
+        <strong>${escapeHtml(a.risk)}</strong> at <strong>${escapeHtml(a.location)}</strong><br>
+        ${a.count30} reports in the last 30 days · ${a.count90} reports in the last 90 days.<br><br>
+        Review the associated risk assessment and existing controls.
+      </div>`).join("")
+    : `<div class="card"><p>No recurring patterns detected yet.</p></div>`;
+}
+
+function openActionModal(reportId) {
+  if (!isManager()) return;
+  document.getElementById("actionReportId").value = reportId;
+  document.getElementById("actionModal").style.display = "flex";
+}
+
+function closeActionModal() {
+  document.getElementById("actionModal").style.display = "none";
+  document.getElementById("actionForm").reset();
+}
+
+async function saveAction(e) {
+  e.preventDefault();
+  if (!isManager()) return;
+
+  const { data: userData } = await supabaseClient.auth.getUser();
+  const payload = {
+    report_id: Number(document.getElementById("actionReportId").value),
+    created_by: userData.user.id,
+    action_text: document.getElementById("actionDescription").value,
+    assigned_to: document.getElementById("actionOwner").value,
+    priority: document.getElementById("actionPriority").value,
+    due_date: document.getElementById("actionDue").value || null,
+    status: "Open"
+  };
+
+  const { error } = await supabaseClient.from("actions").insert(payload);
+  document.getElementById("actionMessage").textContent = error ? error.message : "Action saved.";
+  if (!error) {
+    await loadActions();
+    setTimeout(closeActionModal, 600);
+  }
+}
+
+async function loadActions() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient
+    .from("actions")
+    .select("*, reports(reference, report_type)")
+    .order("created_at", { ascending: false });
+
+  const box = document.getElementById("actionList");
+  if (error) {
+    box.innerHTML = `<div class="card"><p>${escapeHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  const rows = data || [];
+  box.innerHTML = rows.length
+    ? rows.map(a => `
+      <div class="card" style="margin-bottom:12px;">
+        <h3>${escapeHtml(a.reports?.reference || "Report")} · ${escapeHtml(a.priority)}</h3>
+        <p>${escapeHtml(a.action_text)}</p>
+        <p><strong>Assigned:</strong> ${escapeHtml(a.assigned_to || "Not assigned")} · <strong>Status:</strong> ${escapeHtml(a.status)}</p>
+        <p><strong>Due:</strong> ${escapeHtml(a.due_date || "No date")}</p>
+      </div>`).join("")
+    : `<div class="card"><p>No corrective actions yet.</p></div>`;
 }
 
 function escapeHtml(value) {
