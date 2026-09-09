@@ -75,6 +75,45 @@ textarea{min-height:90px}
   color:var(--navy);
 }
 
+
+.report-detail-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:14px;
+}
+.report-detail-box{
+  background:#f7f9fb;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+}
+.report-detail-box.full{grid-column:1/-1}
+.report-detail-label{
+  display:block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted);
+  margin-bottom:4px;
+  font-weight:700;
+}
+.report-detail-value{
+  font-size:14px;
+  line-height:1.45;
+  white-space:pre-wrap;
+}
+.report-card-actions{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+@media(max-width:560px){
+  .report-detail-grid{grid-template-columns:1fr}
+  .report-detail-box.full{grid-column:auto}
+}
+
 </style>
 </head>
 
@@ -279,6 +318,18 @@ textarea{min-height:90px}
 </div>
 
 
+
+<div class="modal" id="reportDetailModal" style="display:none;">
+  <div class="modalbox">
+    <h2>PROACT1102 Report</h2>
+    <div id="reportDetailContent"></div>
+    <div class="actions">
+      <button type="button" class="secondary" onclick="closeReportDetail()">Close</button>
+      <button type="button" class="primary" onclick="printCurrentReport()">Print report</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="actionModal" style="display:none;">
   <div class="modalbox">
     <h2>Create Corrective Action</h2>
@@ -345,6 +396,8 @@ async function signOut() {
 }
 
 let currentRole = "employee";
+let currentReports = [];
+let currentReportForPrint = null;
 
 async function loadApp() {
   const approved = await checkApproval();
@@ -486,6 +539,7 @@ async function loadReports() {
   }
 
   const rows = data || [];
+  currentReports = rows;
   document.getElementById("metricTotal").textContent = rows.length;
   document.getElementById("metricHigh").textContent = rows.filter(r => ["High","Critical"].includes(r.severity)).length;
   document.getElementById("metricNear").textContent = rows.filter(r => r.report_type === "Near Miss").length;
@@ -497,7 +551,10 @@ async function loadReports() {
         <h3>${escapeHtml(r.reference)} · ${escapeHtml(r.report_type)}</h3>
         <p><strong>${escapeHtml(r.location)}</strong> · ${escapeHtml(r.department)}</p>
         <p>${escapeHtml(r.risk_category)} · ${escapeHtml(r.severity)} · ${escapeHtml(r.status)}</p>
-        ${isManager() ? `<button onclick="openActionModal(${r.id})">Create corrective action →</button>` : ""}
+        <div class="report-card-actions">
+          <button onclick="openReportDetail(${r.id})">View full report →</button>
+          ${isManager() ? `<button onclick="openActionModal(${r.id})">Create corrective action →</button>` : ""}
+        </div>
       </div>
     `).join("")
     : `<div class="card"><p>No demo reports saved yet.</p></div>`;
@@ -541,6 +598,118 @@ function renderPatterns(rows) {
         Review the associated risk assessment and existing controls.
       </div>`).join("")
     : `<div class="card"><p>No recurring patterns detected yet.</p></div>`;
+}
+
+
+function formatReportDate(value) {
+  if (!value) return "Not recorded";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
+function openReportDetail(reportId) {
+  const r = currentReports.find(item => Number(item.id) === Number(reportId));
+  if (!r) return;
+
+  currentReportForPrint = r;
+
+  const content = document.getElementById("reportDetailContent");
+  content.innerHTML = `
+    <div class="report-detail-grid">
+      <div class="report-detail-box">
+        <span class="report-detail-label">Reference</span>
+        <div class="report-detail-value">${escapeHtml(r.reference)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Report type</span>
+        <div class="report-detail-value">${escapeHtml(r.report_type)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Date / time</span>
+        <div class="report-detail-value">${escapeHtml(formatReportDate(r.date_time || r.created_at))}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Status</span>
+        <div class="report-detail-value">${escapeHtml(r.status)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Location</span>
+        <div class="report-detail-value">${escapeHtml(r.location)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Department</span>
+        <div class="report-detail-value">${escapeHtml(r.department)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Risk category</span>
+        <div class="report-detail-value">${escapeHtml(r.risk_category)}</div>
+      </div>
+      <div class="report-detail-box">
+        <span class="report-detail-label">Severity</span>
+        <div class="report-detail-value">${escapeHtml(r.severity)}</div>
+      </div>
+      <div class="report-detail-box full">
+        <span class="report-detail-label">Description</span>
+        <div class="report-detail-value">${escapeHtml(r.description)}</div>
+      </div>
+      <div class="report-detail-box full">
+        <span class="report-detail-label">Immediate action taken</span>
+        <div class="report-detail-value">${escapeHtml(r.immediate_action || "None recorded")}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("reportDetailModal").style.display = "flex";
+}
+
+function closeReportDetail() {
+  document.getElementById("reportDetailModal").style.display = "none";
+}
+
+function printCurrentReport() {
+  if (!currentReportForPrint) return;
+  const r = currentReportForPrint;
+  const win = window.open("", "_blank");
+  if (!win) return;
+
+  win.document.write(`
+    <!doctype html>
+    <html>
+    <head>
+      <title>${escapeHtml(r.reference)} - PROACT1102</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;color:#172033;padding:32px;line-height:1.5}
+        h1{color:#17324d;margin-bottom:4px}
+        .tag{color:#20aeb0;font-weight:bold}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+        .box{border:1px solid #dbe4ec;border-radius:8px;padding:12px}
+        .full{grid-column:1/-1}
+        .label{font-size:11px;text-transform:uppercase;color:#6c7a90;font-weight:bold;margin-bottom:4px}
+        .value{white-space:pre-wrap}
+        @media print{button{display:none}}
+      </style>
+    </head>
+    <body>
+      <h1>PROACT<span class="tag">1102</span> Report</h1>
+      <p>Spot the risk. Report it. Reduce it.</p>
+      <div class="grid">
+        <div class="box"><div class="label">Reference</div><div class="value">${escapeHtml(r.reference)}</div></div>
+        <div class="box"><div class="label">Report type</div><div class="value">${escapeHtml(r.report_type)}</div></div>
+        <div class="box"><div class="label">Date / time</div><div class="value">${escapeHtml(formatReportDate(r.date_time || r.created_at))}</div></div>
+        <div class="box"><div class="label">Status</div><div class="value">${escapeHtml(r.status)}</div></div>
+        <div class="box"><div class="label">Location</div><div class="value">${escapeHtml(r.location)}</div></div>
+        <div class="box"><div class="label">Department</div><div class="value">${escapeHtml(r.department)}</div></div>
+        <div class="box"><div class="label">Risk category</div><div class="value">${escapeHtml(r.risk_category)}</div></div>
+        <div class="box"><div class="label">Severity</div><div class="value">${escapeHtml(r.severity)}</div></div>
+        <div class="box full"><div class="label">Description</div><div class="value">${escapeHtml(r.description)}</div></div>
+        <div class="box full"><div class="label">Immediate action taken</div><div class="value">${escapeHtml(r.immediate_action || "None recorded")}</div></div>
+      </div>
+      <script>window.onload=()=>window.print();<\/script>
+    </body>
+    </html>
+  `);
+  win.document.close();
 }
 
 function openActionModal(reportId) {
